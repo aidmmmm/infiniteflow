@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>无限流系统</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0c10'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%236c63ff' font-family='Arial' font-weight='bold'%3E∞%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0b0c10;
+    --card: #13151d;
+    --border: #1f2233;
+    --text: #c8cad6;
+    --muted: #7a7f99;
+    --accent: #6c63ff;
+    --danger: #ff4d6a;
+    --success: #34d399;
+    --warn: #facc15;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ---------- 登录页 ---------- */
+  #login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: radial-gradient(circle at 50% 30%, #1a1c2e 0%, var(--bg) 70%);
+  }
+
+  .login-box {
+    width: 100%;
+    max-width: 420px;
+    padding: 40px 36px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 0 40px rgba(108,99,255,.12);
+    text-align: center;
+  }
+
+  .login-box h1 {
+    font-size: 28px;
+    letter-spacing: 6px;
+    margin-bottom: 6px;
+    color: #fff;
+  }
+
+  .login-box .sub { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+
+  .login-box input {
+    width: 100%;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    background: #0e1019;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+    transition: border .2s;
+  }
+
+  .login-box input:focus { border-color: var(--accent); }
+
+  .auth-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+
+  .auth-tab {
+    flex: 1;
+    padding: 9px 0;
+    background: #0e1019;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all .2s;
+  }
+
+  .auth-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .auth-tab:not(.active):hover { color: #fff; border-color: var(--accent); }
+
+  #points-row { display: none; }
+
+  .auth-sep { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; margin: 12px 0; }
+  .auth-sep::before, .auth-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .auth-hint { color: var(--muted); font-size: 12px; margin-top: 12px; }
+
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: #fff; border-color: var(--accent); }
+
+  .btn {
+    padding: 11px 0;
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background .2s, transform .1s;
+  }
+
+  .btn:active { transform: scale(.97); }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #5a52e0; }
+
+  .btn-sm {
+    width: auto;
+    padding: 7px 16px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-success { background: var(--success); color: #0b0c10; }
+  .btn-warn { background: var(--warn); color: #0b0c10; }
+
+  /* ---------- 主界面 ---------- */
+  #main-page { display: none; }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 28px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  header h2 { font-size: 18px; letter-spacing: 4px; color: #fff; }
+
+  .header-right { display: flex; gap: 12px; align-items: center; }
+
+  .points-display {
+    font-size: 14px;
+    color: var(--warn);
+    font-weight: 700;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 28px auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .section-title {
+    margin: 26px 0 4px;
+    font-size: 20px;
+    letter-spacing: 8px;
+    color: #fff;
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .section-title::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -1px;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+
+  .card.full { grid-column: 1 / -1; }
+
+  /* 玩家信息 + 公会信息 竖向排列（跟随整体单列布局） */
+  .info-row {
+    grid-column: 1 / -1;
+    display: block;
+  }
+
+  .card h3 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 2px;
+  }
+
+  /* 六维 */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .stat-item label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .stat-item input {
+    width: 100%;
+    padding: 8px 10px;
+    background: #0e1019;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .stat-item input:focus { border-color: var(--accent); }
+
+  .rank-result {
+    margin-top: 16px;
+    padding: 14px;
+    background: #0e1019;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 15px;
+  }
+
+  .rank-badge {
+    display: inline-block;
+    padding: 4px 18px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: 3px;
+    margin: 6px 0;
+  }
+
+  /* 道具 */
+  .item-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+  }
+
+  .item-row input, .item-row select {
+    flex: 1;
+    padding: 8px 10px;
+    background: #0e1019;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 13px;
+    outline: none;
+  }
+
+  .item-row select { flex: 0 0 90px; }
+
+  .item-list { margin-top: 12px; min-height: 24px; }
+
+  .item-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin: 4px 6px 4px 0;
+    border: 1px solid var(--border);
+  }
+
+  .item-tag .remove {
+    cursor: pointer;
+    color: var(--danger);
+    font-weight: 700;
+    margin-left: 4px;
+  }
+
+  /* 公会 */
+  .guild-info { font-size: 14px; color: var(--muted); }
+  .guild-info span { color: #fff; font-weight: 600; }
+
+  /* 积分编辑 */
+  .points-edit {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .points-edit input {
+    flex: 1 1 100px;
+    padding: 8px 10px;
+    background: #0e1019;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+  }
+
+  /* 颜色主题 */
+  .theme-F { --accent: #6b7280; }
+  .theme-E { --accent: #22c55e; }
+  .theme-D { --accent: #3b82f6; }
+  .theme-C { --accent: #06b6d4; }
+  .theme-B { --accent: #a855f7; }
+  .theme-A { --accent: #f97316; }
+  .theme-S { --accent: #ef4444; }
+
+  /* ---------- 管理后台 ---------- */
+  #admin-page { display: none; }
+
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 14px;
+  }
+
+  .admin-table th, .admin-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    word-break: break-all;
+  }
+
+  .admin-table th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .admin-table tr:hover td { background: #171a26; }
+  .admin-empty { color: var(--muted); font-size: 14px; padding: 16px 0; }
+
+  .d-stat {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    background: #0e1019;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    color: #fff;
+  }
+
+  .d-stat em { font-style: normal; color: var(--muted); font-size: 12px; }
+
+  .guild-summary { margin-top: 12px; font-size: 14px; color: var(--muted); }
+  .guild-summary span { color: #fff; font-weight: 600; }
+
+  .gm-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin-top: 6px;
+    background: #0e1019;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  .gm-row .gm-name { color: #fff; font-weight: 600; }
+  .gm-row .gm-meta { color: var(--muted); }
+
+  .rank-empty { color: var(--muted); font-size: 14px; padding: 16px 0; }
+
+  .rank-no { display: inline-block; width: 26px; height: 26px; line-height: 26px; text-align: center;
+    border-radius: 6px; font-weight: 800; font-size: 13px; background: #0e1019; border: 1px solid var(--border); }
+  .rank-no.top1 { color: #facc15; border-color: #facc15; }
+  .rank-no.top2 { color: #c0c0c0; border-color: #c0c0c0; }
+  .rank-no.top3 { color: #e5a15a; border-color: #e5a15a; }
+
+  /* 管理员编辑面板 */
+  .edit-form { display: flex; flex-direction: column; gap: 14px; }
+  .edit-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .edit-row label { color: var(--muted); font-size: 13px; min-width: 60px; }
+  .edit-row input {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px 10px;
+    background: #0e1019;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+  }
+  .edit-actions { display: flex; gap: 10px; margin-top: 4px; }
+
+  /* 响应式 */
+  @media (max-width: 700px) {
+    .container { grid-template-columns: 1fr; }
+    header { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+    .points-edit .btn-sm { flex: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== 登录页 ==================== -->
+<div id="login-page">
+  <div class="login-box">
+    <h1>无限流系统</h1>
+    <p class="sub">PLAYER LOGIN SYSTEM</p>
+    <div class="auth-tabs">
+      <button id="tab-login" class="auth-tab active" type="button" onclick="setAuthMode('login')">登 录</button>
+      <button id="tab-register" class="auth-tab" type="button" onclick="setAuthMode('register')">注 册</button>
+      <button id="tab-admin" class="auth-tab" type="button" onclick="setAuthMode('admin')">管理员</button>
+    </div>
+    <input id="login-name" type="text" placeholder="账号 / 玩家代号" maxlength="20">
+    <input id="login-pass" type="password" placeholder="密码" maxlength="30">
+    <div id="points-row">
+      <input id="login-points" type="number" placeholder="初始积分" min="0" disabled>
+    </div>
+    <button id="auth-btn" class="btn btn-primary" onclick="submitAuth()">登 录</button>
+    <div class="auth-sep"><span>或</span></div>
+    <button class="btn btn-sm btn-ghost" onclick="guestEnter()">游客模式进入（不注册）</button>
+    <p id="auth-hint" class="auth-hint"></p>
+  </div>
+</div>
+
+<!-- ==================== 主界面 ==================== -->
+<div id="main-page">
+  <header>
+    <h2>无限流系统</h2>
+    <div class="header-right">
+      <span id="header-user" style="color:#fff;font-size:13px;font-weight:600"></span>
+      <span class="points-display" id="header-points">积分：0</span>
+      <button class="btn btn-sm btn-danger" onclick="doLogout()">退出</button>
+    </div>
+  </header>
+
+  <div class="section-title">基础信息</div>
+
+  <div class="container" id="main-container">
+
+    <div class="info-row">
+
+    <!-- 玩家信息 -->
+    <div class="card">
+      <h3>👤 玩家信息</h3>
+      <p style="margin-bottom:8px">代号：<strong id="p-name" style="color:#fff"></strong></p>
+      <p style="margin-bottom:8px">公会：<span id="p-guild" class="guild-info">无</span></p>
+      <div style="margin-bottom:6px">积分</div>
+      <div class="points-edit">
+        <input id="points-input" type="number" placeholder="输入积分" min="0">
+        <button class="btn btn-sm btn-warn" onclick="setPoints()">设定</button>
+        <button class="btn btn-sm btn-success" onclick="addPoints()">+ 获得</button>
+        <button class="btn btn-sm btn-danger" onclick="subPoints()">- 消耗</button>
+      </div>
+    </div>
+
+    <!-- 公会信息 -->
+    <div class="card">
+      <h3>🏛️ 公会信息</h3>
+      <div id="guild-section">
+        <input id="guild-input" type="text" placeholder="输入公会名称" style="width:100%;padding:8px 10px;background:#0e1019;border:1px solid var(--border);border-radius:6px;color:#fff;font-size:14px;margin-bottom:8px;outline:none;">
+        <button class="btn btn-sm btn-primary" onclick="setGuild()">登陆公会</button>
+        <button class="btn btn-sm btn-danger" onclick="clearGuild()" style="margin-left:6px">退出公会</button>
+      </div>
+      <div id="guild-summary" class="guild-summary"></div>
+      <div id="guild-members"></div>
+    </div>
+
+    </div>
+
+    <!-- 六维素质 -->
+    <div class="card">
+      <h3>💪 六维素质</h3>
+      <div class="stats-grid">
+        <div class="stat-item"><label>力量 STR</label><input type="number" id="s-str" min="0" oninput="calcRank()"></div>
+        <div class="stat-item"><label>敏捷 AGI</label><input type="number" id="s-agi" min="0" oninput="calcRank()"></div>
+        <div class="stat-item"><label>体质 CON</label><input type="number" id="s-con" min="0" oninput="calcRank()"></div>
+        <div class="stat-item"><label>智力 INT</label><input type="number" id="s-int" min="0" oninput="calcRank()"></div>
+        <div class="stat-item"><label>精神 SPI</label><input type="number" id="s-spi" min="0" oninput="calcRank()"></div>
+        <div class="stat-item"><label>幸运 LUK</label><input type="number" id="s-luk" min="0" oninput="calcRank()"></div>
+      </div>
+      <div class="rank-result" id="rank-result">
+        填写六维数值后自动评定档位
+      </div>
+    </div>
+
+    <!-- 道具 -->
+    <div class="card">
+      <h3>🎒 道具栏</h3>
+      <div class="item-row">
+        <input id="item-name" type="text" placeholder="道具名称">
+        <select id="item-grade">
+          <option value="F">F</option>
+          <option value="E">E</option>
+          <option value="D">D</option>
+          <option value="C">C</option>
+          <option value="B">B</option>
+          <option value="A">A</option>
+          <option value="S">S</option>
+        </select>
+        <button class="btn btn-sm btn-success" onclick="addItem()">添加</button>
+      </div>
+      <div class="item-list" id="item-list"></div>
+    </div>
+
+    <!-- 系统日志 -->
+    <div class="card full">
+      <h3>📜 系统日志</h3>
+      <div id="log-box" style="max-height:160px;overflow-y:auto;font-size:13px;color:var(--muted);line-height:1.8;"></div>
+    </div>
+
+  </div>
+
+  <div class="section-title">排行榜</div>
+
+  <div class="container">
+    <div class="card full">
+      <h3>🏆 公会排行榜</h3>
+      <div id="guild-ranking"></div>
+    </div>
+
+    <div class="card full">
+      <h3>🏅 玩家排行榜</h3>
+      <div id="player-ranking"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 管理后台 ==================== -->
+<div id="admin-page">
+  <header>
+    <h2>无限流系统 · 管理后台</h2>
+    <div class="header-right">
+      <span id="admin-user" style="color:#fff;font-size:13px;font-weight:600">管理员</span>
+      <button class="btn btn-sm btn-danger" onclick="adminLogout()">退出</button>
+    </div>
+  </header>
+
+  <div class="container" id="admin-container">
+    <div class="card full">
+      <h3>📊 全部玩家资料</h3>
+      <div id="admin-list"></div>
+    </div>
+
+    <div class="card full" id="admin-detail" style="display:none">
+      <h3>🔍 玩家详情：<span id="detail-name" style="color:#fff"></span></h3>
+      <p id="detail-base" style="margin-bottom:12px"></p>
+      <div id="detail-stats" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px"></div>
+      <div style="margin-bottom:6px;color:var(--muted);font-size:13px">道具</div>
+      <div id="detail-items"></div>
+    </div>
+
+    <div class="card full" id="admin-edit" style="display:none">
+      <h3>✏️ 编辑玩家：<span id="edit-name" style="color:#fff"></span></h3>
+      <div class="edit-form">
+        <div class="edit-row"><label>密码</label><input id="edit-pass" type="password" placeholder="留空则不修改密码"></div>
+        <div class="edit-row"><label>积分</label><input id="edit-points" type="number" min="0"></div>
+        <div class="edit-row"><label>公会</label><input id="edit-guild" type="text" placeholder="公会名称"></div>
+        <div class="edit-row"><label>六维</label><div id="edit-stats" style="display:flex;gap:8px;flex-wrap:wrap;flex:1"></div></div>
+        <div class="edit-actions">
+          <button class="btn btn-sm btn-success" onclick="saveEdit()">保存修改</button>
+          <button class="btn btn-sm btn-ghost" onclick="cancelEdit()">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==================== 数据 ==================== */
+const RANK_THRESHOLD = { 'F': 200, 'E': 300, 'D': 500, 'C': 700, 'B': 1000, 'A': 1500, 'S': 2000 };
+const RANK_ORDER = ['F','E','D','C','B','A','S'];
+const RANK_COLOR = {
+  'F':'#6b7280','F+':'#787f8a','F-':'#5f6570',
+  'E':'#22c55e','E+':'#4ade80','E-':'#16a34a',
+  'D':'#3b82f6','D+':'#60a5fa','D-':'#2563eb',
+  'C':'#06b6d4','C+':'#22d3ee','C-':'#0891b2',
+  'B':'#a855f7','B+':'#c084fc','B-':'#9333ea',
+  'A':'#f97316','A+':'#fb923c','A-':'#ea580c',
+  'S':'#ef4444','S+':'#f87171','S-':'#dc2626'
+};
+const SAVE_KEY = 'infinity_flow_save';
+const ACCOUNT_KEY = 'infinity_flow_accounts';
+const ADMIN_KEY = 'infinity_flow_admin';
+
+let player = { name: '', points: 0, guild: '', items: [], stats: [] };
+let authMode = 'login';   // 'login' | 'register' | 'admin'
+let currentUser = '';     // 当前登录账号名；'' 表示游客模式
+let currentEdit = '';     // 管理员正在编辑的玩家账号
+
+/* ==================== 账号与持久化 ==================== */
+function loadAccounts() {
+  try { return JSON.parse(localStorage.getItem(ACCOUNT_KEY)) || {}; } catch (e) { return {}; }
+}
+function saveAccounts(acc) {
+  try { localStorage.setItem(ACCOUNT_KEY, JSON.stringify(acc)); } catch (e) {}
+}
+function loadAdmin() {
+  try { return JSON.parse(localStorage.getItem(ADMIN_KEY)) || null; } catch (e) { return null; }
+}
+function saveAdmin(adm) {
+  try { localStorage.setItem(ADMIN_KEY, JSON.stringify(adm)); } catch (e) {}
+}
+// 轻量密码散列（本地演示用，非加密级安全）
+function hashPass(p) {
+  let h = 5381;
+  for (let i = 0; i < p.length; i++) h = ((h << 5) + h + p.charCodeAt(i)) >>> 0;
+  return 'h' + h.toString(16);
+}
+
+function saveData() {
+  if (currentUser) {
+    const acc = loadAccounts();
+    if (acc[currentUser]) {
+      acc[currentUser].player = JSON.parse(JSON.stringify(player));
+      saveAccounts(acc);
+    }
+  } else {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(player)); } catch (e) {}
+  }
+}
+function loadGuest() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    return (p && typeof p === 'object') ? p : null;
+  } catch (e) {}
+  return null;
+}
+
+/* ==================== 登录 / 注册 / 管理员 / 退出 ==================== */
+function setAuthMode(mode) {
+  authMode = mode;
+  const isLogin = mode === 'login', isRegister = mode === 'register', isAdmin = mode === 'admin';
+  document.getElementById('tab-login').classList.toggle('active', isLogin);
+  document.getElementById('tab-register').classList.toggle('active', isRegister);
+  document.getElementById('tab-admin').classList.toggle('active', isAdmin);
+  document.getElementById('points-row').style.display = isRegister ? 'block' : 'none';
+  document.getElementById('login-points').disabled = !isRegister;
+  // 管理员模式：账号固定为 admin，只填密码
+  const nameInput = document.getElementById('login-name');
+  nameInput.disabled = isAdmin;
+  nameInput.value = isAdmin ? 'admin' : '';
+  const passInput = document.getElementById('login-pass');
+  passInput.value = '';
+  passInput.placeholder = isAdmin ? '管理员密码' : '密码';
+  document.getElementById('auth-btn').textContent = isLogin ? '登 录' : (isRegister ? '注册并进入' : '管理员登录');
+  document.getElementById('auth-hint').textContent = isLogin
+    ? '还没有账号？切换到「注册」创建'
+    : (isRegister ? '注册后请牢记代号与密码，下次可直接登录' : '管理员可查看全部玩家的资料（只读）');
+}
+
+function submitAuth() {
+  // 管理员登录
+  if (authMode === 'admin') return adminLogin();
+  const name = document.getElementById('login-name').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if (!name) return alert('请输入账号 / 玩家代号');
+  const acc = loadAccounts();
+
+  if (authMode === 'login') {
+    const rec = acc[name];
+    if (!rec) return alert('该账号不存在，请先注册');
+    if (hashPass(pass) !== rec.pass) return alert('密码错误，请重试');
+    player = JSON.parse(JSON.stringify(rec.player || { name: name, points: 0, guild: '', items: [], stats: [] }));
+    player.name = name;
+    currentUser = name;
+    enterMain(false);
+  } else {
+    if (!pass) return alert('请设置密码');
+    if (pass.length < 4) return alert('密码至少 4 位');
+    if (acc[name]) return alert('该代号已被注册，请直接登录');
+    const pts = parseInt(document.getElementById('login-points').value) || 0;
+    acc[name] = { pass: hashPass(pass), player: { name: name, points: pts, guild: '', items: [], stats: [] } };
+    saveAccounts(acc);
+    player = JSON.parse(JSON.stringify(acc[name].player));
+    currentUser = name;
+    enterMain(true);
+  }
+  saveData();
+}
+
+/* ==================== 管理员 ==================== */
+function adminLogin() {
+  const pass = document.getElementById('login-pass').value;
+  const adm = loadAdmin();
+  // 首次登录：密码尚未设置，先设置管理员密码
+  if (!adm) {
+    if (!pass) return alert('尚未设置管理员密码，请输入作为初始密码');
+    if (pass.length < 4) return alert('密码至少 4 位');
+    saveAdmin({ pass: hashPass(pass) });
+    return alert('管理员密码已设置，请重新登录');
+  }
+  if (!pass) return alert('请输入管理员密码');
+  if (hashPass(pass) !== adm.pass) return alert('管理员密码错误');
+  enterAdmin();
+}
+
+function enterAdmin() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('main-page').style.display = 'none';
+  document.getElementById('admin-page').style.display = 'block';
+  document.getElementById('admin-detail').style.display = 'none';
+  document.getElementById('admin-edit').style.display = 'none';
+  renderAdminList();
+  addLog('管理员已进入管理后台');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function calcRankOf(total) {
+  let rank = 'F';
+  for (let i = RANK_ORDER.length - 1; i >= 0; i--) {
+    if (total >= RANK_THRESHOLD[RANK_ORDER[i]]) { rank = RANK_ORDER[i]; break; }
+  }
+  let suffix = '';
+  if (rank !== 'S') {
+    const idx = RANK_ORDER.indexOf(rank);
+    const curMin = RANK_THRESHOLD[rank];
+    const nextMin = RANK_THRESHOLD[RANK_ORDER[idx + 1]];
+    const pct = (total - curMin) / (nextMin - curMin);
+    if (pct >= 0.8) suffix = '+';
+    else if (pct <= 0.2) suffix = '-';
+  }
+  return rank + suffix;
+}
+
+function renderAdminList() {
+  const acc = loadAccounts();
+  const names = Object.keys(acc);
+  const box = document.getElementById('admin-list');
+  if (!names.length) {
+    box.innerHTML = '<div class="admin-empty">暂无注册玩家</div>';
+    return;
+  }
+  const rows = names.map(name => {
+    const p = acc[name].player || {};
+    const stats = p.stats || [];
+    const total = stats.reduce((a, b) => a + (+b || 0), 0);
+    const rank = total > 0 ? calcRankOf(total) : '—';
+    const safeName = escapeHtml(name).replace(/'/g, "\\'");
+    return `<tr>
+      <td>${escapeHtml(name)}</td>
+      <td>${p.points || 0}</td>
+      <td>${escapeHtml(p.guild || '无')}</td>
+      <td>${total}</td>
+      <td style="color:${RANK_COLOR[rank] || '#fff'}">${rank}</td>
+      <td>${(p.items || []).length}</td>
+      <td>
+        <button class="btn btn-sm btn-primary" onclick="showPlayerDetail('${safeName}')">档案</button>
+        <button class="btn btn-sm btn-warn" onclick="editPlayer('${safeName}')">编辑</button>
+        <button class="btn btn-sm btn-danger" onclick="deletePlayer('${safeName}')">删除</button>
+      </td>
+    </tr>`;
+  }).join('');
+  box.innerHTML = `<table class="admin-table">
+    <colgroup>
+      <col style="width:16%"><col style="width:10%"><col style="width:14%">
+      <col style="width:12%"><col style="width:10%"><col style="width:8%"><col style="width:30%">
+    </colgroup>
+    <thead><tr><th>账号</th><th>积分</th><th>公会</th><th>六维总值</th><th>档位</th><th>道具</th><th>操作</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+/* ---- 管理员：编辑 / 删除玩家 ---- */
+function editPlayer(name) {
+  const acc = loadAccounts();
+  const rec = acc[name];
+  if (!rec) return;
+  const p = rec.player || {};
+  currentEdit = name;
+  document.getElementById('edit-name').textContent = name;
+  document.getElementById('edit-pass').value = '';
+  document.getElementById('edit-points').value = p.points || 0;
+  document.getElementById('edit-guild').value = p.guild || '';
+  const labels = ['力量', '敏捷', '体质', '智力', '精神', '幸运'];
+  const st = p.stats || [0, 0, 0, 0, 0, 0];
+  document.getElementById('edit-stats').innerHTML = labels.map((l, i) =>
+    `<div class="stat-item"><label>${l}</label><input type="number" id="edit-stat-${i}" min="0" value="${st[i] || 0}"></div>`
+  ).join('');
+  document.getElementById('admin-edit').style.display = 'block';
+  document.getElementById('admin-detail').style.display = 'none';
+}
+
+function saveEdit() {
+  if (!currentEdit) return;
+  const acc = loadAccounts();
+  const rec = acc[currentEdit];
+  if (!rec) { cancelEdit(); return; }
+  const p = rec.player || {};
+  p.points = parseInt(document.getElementById('edit-points').value) || 0;
+  p.guild = document.getElementById('edit-guild').value.trim();
+  p.stats = ['力量', '敏捷', '体质', '智力', '精神', '幸运']
+    .map((_, i) => parseInt(document.getElementById('edit-stat-' + i).value) || 0);
+  // 填写了新密码则重置玩家密码
+  const newPass = document.getElementById('edit-pass').value;
+  if (newPass) {
+    if (newPass.length < 4) return alert('新密码至少 4 位');
+    acc[currentEdit].pass = hashPass(newPass);
+  }
+  acc[currentEdit].player = p;
+  saveAccounts(acc);
+  document.getElementById('admin-edit').style.display = 'none';
+  currentEdit = '';
+  renderAdminList();
+  addLog(`管理员已修改玩家【${rec.player.name}】的资料`);
+  alert('已保存修改');
+}
+
+function cancelEdit() {
+  document.getElementById('admin-edit').style.display = 'none';
+  currentEdit = '';
+}
+
+function deletePlayer(name) {
+  if (!confirm(`确定删除玩家【${name}】？该操作不可恢复`)) return;
+  const acc = loadAccounts();
+  if (!acc[name]) return;
+  delete acc[name];
+  saveAccounts(acc);
+  document.getElementById('admin-detail').style.display = 'none';
+  document.getElementById('admin-edit').style.display = 'none';
+  renderAdminList();
+  addLog(`管理员已删除玩家【${name}】`);
+}
+
+function showPlayerDetail(name) {
+  const acc = loadAccounts();
+  const rec = acc[name];
+  if (!rec) return;
+  const p = rec.player || {};
+  const stats = p.stats || [0, 0, 0, 0, 0, 0];
+  const labels = ['力量', '敏捷', '体质', '智力', '精神', '幸运'];
+  const total = stats.reduce((a, b) => a + (+b || 0), 0);
+  const rank = total > 0 ? calcRankOf(total) : '—';
+  const items = p.items || [];
+  document.getElementById('detail-name').textContent = name;
+  document.getElementById('detail-base').innerHTML =
+    `积分：<span style="color:var(--warn);font-weight:700">${p.points || 0}</span>　` +
+    `公会：${escapeHtml(p.guild || '无')}　` +
+    `六维总值：${total}　档位：<span style="color:${RANK_COLOR[rank] || '#fff'};font-weight:700">${rank}</span>`;
+  document.getElementById('detail-stats').innerHTML =
+    stats.map((v, i) => `<span class="d-stat"><em>${labels[i]}</em>${v || 0}</span>`).join('');
+  document.getElementById('detail-items').innerHTML = items.length
+    ? items.map(it =>
+        `<span class="item-tag theme-${it.grade}" style="border-color:${RANK_COLOR[it.grade] || '#6b7280'}">` +
+          `<span style="color:#fff">${escapeHtml(it.name)}</span>` +
+          `<em style="font-style:normal;color:${RANK_COLOR[it.grade] || '#6b7280'};font-weight:700">[${it.grade}]</em>` +
+        `</span>`).join('')
+    : '<span class="admin-empty">无道具</span>';
+  document.getElementById('admin-detail').style.display = 'block';
+}
+
+function adminLogout() {
+  if (!confirm('确定退出管理后台？')) return;
+  document.getElementById('admin-page').style.display = 'none';
+  document.getElementById('admin-edit').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('login-pass').value = '';
+  currentEdit = '';
+  setAuthMode('login');
+}
+
+function guestEnter() {
+  const saved = loadGuest();
+  const typed = document.getElementById('login-name').value.trim();
+  player = (saved && saved.name)
+    ? JSON.parse(JSON.stringify(saved))
+    : { name: typed || '游客', points: 0, guild: '', items: [], stats: [] };
+  currentUser = '';
+  saveData();
+  enterMain(false);
+}
+
+function enterMain(isNew) {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('admin-page').style.display = 'none';
+  document.getElementById('main-page').style.display = 'block';
+  document.getElementById('p-name').textContent = player.name;
+  document.getElementById('header-user').textContent = currentUser ? currentUser : player.name + '（游客）';
+  renderGuild();
+  updatePoints();
+  renderItems();
+  restoreStats();
+  renderGuildInfo();
+  renderRankings();
+  addLog(isNew
+    ? `玩家【${player.name}】注册成功，已接入无限流系统`
+    : `玩家【${player.name}】已接入无限流系统，当前积分 ${player.points}`);
+}
+
+function doLogout() {
+  if (!confirm('确定退出系统？')) return;
+  saveData();
+  document.getElementById('main-page').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('login-name').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-points').value = '';
+  document.getElementById('rank-result').innerHTML = '填写六维数值后自动评定档位';
+  document.getElementById('item-list').innerHTML = '';
+  document.getElementById('log-box').innerHTML = '';
+  document.getElementById('guild-input').value = '';
+  document.getElementById('p-guild').innerHTML = '无';
+  document.getElementById('p-name').textContent = '';
+  document.getElementById('header-user').textContent = '';
+  document.getElementById('header-points').textContent = '积分：0';
+  document.getElementById('points-input').value = '';
+  ['s-str','s-agi','s-con','s-int','s-spi','s-luk'].forEach(id => document.getElementById(id).value = '');
+  player = { name:'', points:0, guild:'', items:[], stats:[] };
+  currentUser = '';
+  setAuthMode('login');
+}
+
+/* ==================== 积分 ==================== */
+function updatePoints() {
+  document.getElementById('header-points').textContent = `积分：${player.points}`;
+}
+
+function setPoints() {
+  const v = parseInt(document.getElementById('points-input').value);
+  if (isNaN(v) || v < 0) return alert('请输入有效积分');
+  player.points = v;
+  updatePoints();
+  saveData();
+  renderRankings();
+  renderGuildInfo();
+  addLog(`系统设定积分变更为 ${v}`);
+  document.getElementById('points-input').value = '';
+}
+
+function addPoints() {
+  const v = parseInt(document.getElementById('points-input').value);
+  if (isNaN(v) || v <= 0) return alert('请输入正整数');
+  player.points += v;
+  updatePoints();
+  saveData();
+  renderRankings();
+  renderGuildInfo();
+  addLog(`玩家获得积分 +${v}，当前积分 ${player.points}`);
+  document.getElementById('points-input').value = '';
+}
+
+function subPoints() {
+  const v = parseInt(document.getElementById('points-input').value);
+  if (isNaN(v) || v <= 0) return alert('请输入正整数');
+  if (v > player.points) return alert('积分不足');
+  player.points -= v;
+  updatePoints();
+  saveData();
+  renderRankings();
+  renderGuildInfo();
+  addLog(`玩家消耗积分 -${v}，当前积分 ${player.points}`);
+  document.getElementById('points-input').value = '';
+}
+
+/* ==================== 公会 ==================== */
+function renderGuild() {
+  document.getElementById('p-guild').innerHTML = player.guild ? `<span>${player.guild}</span>` : '无';
+}
+
+function setGuild() {
+  const g = document.getElementById('guild-input').value.trim();
+  if (!g) return alert('请输入公会名称');
+  player.guild = g;
+  renderGuild();
+  saveData();
+  renderGuildInfo();
+  renderRankings();
+  addLog(`玩家加入公会【${g}】`);
+  document.getElementById('guild-input').value = '';
+}
+
+function clearGuild() {
+  player.guild = '';
+  renderGuild();
+  saveData();
+  renderGuildInfo();
+  renderRankings();
+  addLog('玩家已退出公会');
+}
+
+/* ==================== 公会信息 & 排行榜 ==================== */
+function computeGuildRanking() {
+  const acc = loadAccounts();
+  const guilds = {};
+  Object.keys(acc).forEach(name => {
+    const p = acc[name].player || {};
+    const g = p.guild || '';
+    if (!g) return;
+    if (!guilds[g]) guilds[g] = { name: g, members: 0, points: 0, power: 0 };
+    const total = (p.stats || []).reduce((a, b) => a + (+b || 0), 0);
+    guilds[g].members++;
+    guilds[g].points += p.points || 0;
+    guilds[g].power += total;
+  });
+  return Object.keys(guilds).map(g => {
+    const d = guilds[g];
+    d.avgPower = d.members ? Math.round(d.power / d.members) : 0;
+    d.score = d.points + d.power;   // 综合得分 = 总积分 + 实力总值
+    return d;
+  }).sort((a, b) => b.score - a.score);
+}
+
+function computePlayerRanking() {
+  const acc = loadAccounts();
+  return Object.keys(acc).map(name => {
+    const p = acc[name].player || {};
+    const total = (p.stats || []).reduce((a, b) => a + (+b || 0), 0);
+    return { name, guild: p.guild || '', points: p.points || 0, power: total, score: (p.points || 0) + total };
+  }).sort((a, b) => b.score - a.score);
+}
+
+function rankBadge(i) {
+  const cls = i === 0 ? 'top1' : (i === 1 ? 'top2' : (i === 2 ? 'top3' : ''));
+  return `<span class="rank-no ${cls}">${i + 1}</span>`;
+}
+
+function renderRankings() {
+  const guilds = computeGuildRanking();
+  const gbox = document.getElementById('guild-ranking');
+  if (!guilds.length) {
+    gbox.innerHTML = '<div class="rank-empty">暂无公会</div>';
+  } else {
+    gbox.innerHTML = `<table class="admin-table">
+      <colgroup>
+        <col style="width:10%"><col style="width:22%"><col style="width:12%">
+        <col style="width:18%"><col style="width:20%"><col style="width:18%">
+      </colgroup>
+      <thead><tr><th>名次</th><th>公会</th><th>成员</th><th>总积分</th><th>实力总值</th><th>综合得分</th></tr></thead>
+      <tbody>` + guilds.map((g, i) =>
+        `<tr><td>${rankBadge(i)}</td><td style="color:#fff;font-weight:700">${escapeHtml(g.name)}</td>` +
+        `<td>${g.members}</td><td>${g.points}</td><td>${g.power}</td>` +
+        `<td style="color:var(--warn);font-weight:700">${g.score}</td></tr>`
+      ).join('') + `</tbody></table>`;
+  }
+
+  const players = computePlayerRanking();
+  const pbox = document.getElementById('player-ranking');
+  if (!players.length) {
+    pbox.innerHTML = '<div class="rank-empty">暂无玩家</div>';
+  } else {
+    pbox.innerHTML = `<table class="admin-table">
+      <colgroup>
+        <col style="width:10%"><col style="width:20%"><col style="width:18%">
+        <col style="width:16%"><col style="width:16%"><col style="width:20%">
+      </colgroup>
+      <thead><tr><th>名次</th><th>代号</th><th>公会</th><th>积分</th><th>实力总值</th><th>综合得分</th></tr></thead>
+      <tbody>` + players.map((p, i) =>
+        `<tr><td>${rankBadge(i)}</td><td style="color:#fff;font-weight:700">${escapeHtml(p.name)}</td>` +
+        `<td>${escapeHtml(p.guild || '—')}</td><td>${p.points}</td><td>${p.power}</td>` +
+        `<td style="color:var(--warn);font-weight:700">${p.score}</td></tr>`
+      ).join('') + `</tbody></table>`;
+  }
+}
+
+function renderGuildInfo() {
+  const g = player.guild;
+  const summary = document.getElementById('guild-summary');
+  const members = document.getElementById('guild-members');
+  if (!g) {
+    summary.innerHTML = '未加入公会，输入公会名称并点击「登陆公会」';
+    members.innerHTML = '';
+    return;
+  }
+  const acc = loadAccounts();
+  const list = Object.keys(acc)
+    .map(name => ({ name: name, p: acc[name].player || {} }))
+    .filter(x => (x.p.guild || '') === g)
+    .map(x => {
+      const total = (x.p.stats || []).reduce((a, b) => a + (+b || 0), 0);
+      const rank = total > 0 ? calcRankOf(total) : '—';
+      return `<div class="gm-row">
+        <span class="gm-name">${escapeHtml(x.name)}</span>
+        <span class="gm-meta">积分 ${x.p.points || 0}　实力 ${total}　档位 <span style="color:${RANK_COLOR[rank] || '#fff'};font-weight:700">${rank}</span></span>
+      </div>`;
+    });
+  const gRank = computeGuildRanking().find(x => x.name === g);
+  summary.innerHTML = `公会：<span>${escapeHtml(g)}</span>　成员 ${list.length} 人　` +
+    `总积分 ${gRank ? gRank.points : 0}　实力总值 ${gRank ? gRank.power : 0}　` +
+    `综合得分 <span style="color:var(--warn)">${gRank ? gRank.score : 0}</span>`;
+  members.innerHTML = list.length ? list.join('') : '<div class="rank-empty">暂无成员</div>';
+}
+
+/* ==================== 六维 & 档位 ==================== */
+function getStats() {
+  const ids = ['s-str','s-agi','s-con','s-int','s-spi','s-luk'];
+  return ids.map(id => parseInt(document.getElementById(id).value) || 0);
+}
+
+function restoreStats() {
+  const st = player.stats || [0, 0, 0, 0, 0, 0];
+  const ids = ['s-str','s-agi','s-con','s-int','s-spi','s-luk'];
+  ids.forEach((id, i) => { document.getElementById(id).value = st[i] || ''; });
+  calcRank();
+}
+
+function calcRank() {
+  const ids = ['s-str','s-agi','s-con','s-int','s-spi','s-luk'];
+  let total = 0, valid = true;
+  ids.forEach(id => {
+    const v = parseInt(document.getElementById(id).value);
+    if (isNaN(v)) { valid = false; return; }
+    total += v;
+  });
+  if (!valid || total === 0) {
+    document.getElementById('rank-result').innerHTML = '填写六维数值后自动评定档位';
+    return;
+  }
+
+  let rankStr = calcRankOf(total);
+
+  // 记录六维用于持久化
+  const st = getStats();
+  player.stats = st;
+  saveData();
+  renderRankings();
+  renderGuildInfo();
+
+  document.getElementById('rank-result').innerHTML =
+    `<div style="color:var(--muted);font-size:13px;margin-bottom:4px">六维总值：<span style="color:#fff;font-weight:700;font-size:16px">${total}</span></div>` +
+    `<span class="rank-badge" style="color:${RANK_COLOR[rankStr] || '#fff'}">${rankStr}</span>`;
+}
+
+/* ==================== 道具 ==================== */
+function addItem() {
+  const name = document.getElementById('item-name').value.trim();
+  const grade = document.getElementById('item-grade').value;
+  if (!name) return alert('请输入道具名称');
+  player.items.push({ name: name, grade: grade });
+  renderItems();
+  saveData();
+  addLog(`获得道具【${name}】（${grade}级）`);
+  document.getElementById('item-name').value = '';
+}
+
+function removeItem(i) {
+  const it = player.items[i];
+  if (!it) return;
+  player.items.splice(i, 1);
+  renderItems();
+  saveData();
+  addLog(`移除道具【${it.name}】`);
+}
+
+function renderItems() {
+  const box = document.getElementById('item-list');
+  if (!player.items.length) {
+    box.innerHTML = '<span style="color:var(--muted);font-size:13px">道具栏为空</span>';
+    return;
+  }
+  box.innerHTML = player.items.map((it, i) =>
+    `<span class="item-tag theme-${it.grade}" style="border-color:${RANK_COLOR[it.grade] || '#6b7280'}">` +
+      `<span style="color:#fff">${it.name}</span>` +
+      `<em style="font-style:normal;color:${RANK_COLOR[it.grade] || '#6b7280'};font-weight:700">[${it.grade}]</em>` +
+      `<span class="remove" onclick="removeItem(${i})">×</span>` +
+    `</span>`
+  ).join('');
+}
+
+/* ==================== 系统日志 ==================== */
+function addLog(msg) {
+  const box = document.getElementById('log-box');
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  const time = `${hh}:${mm}:${ss}`;
+  const line = document.createElement('div');
+  line.innerHTML = `<span style="color:var(--accent)">[${time}]</span> ${msg}`;
+  box.prepend(line);
+  // 只保留最近 40 条，避免日志无限增长
+  while (box.children.length > 40) box.removeChild(box.lastChild);
+}
+
+/* ==================== 初始化 ==================== */
+// 登录框内按回车触发登录/注册
+document.getElementById('login-name').addEventListener('keydown', e => { if (e.key === 'Enter') submitAuth(); });
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') submitAuth(); });
+setAuthMode('login');
+</script>
+</body>
+</html>
